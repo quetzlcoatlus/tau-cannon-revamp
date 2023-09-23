@@ -18,7 +18,7 @@ public class PlayerMovement : MonoBehaviour
     public LayerMask                groundMask;
 
     Vector3                         move;
-    Vector3                         velocity;
+    [SerializeField] Vector3        velocity;
     public bool                     isGrounded;
     
     public float                    knockBackMultiplier = .5f;
@@ -36,51 +36,72 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        checkIfGrounded();
+
+        horizontalMovement();
+
+        if (Input.GetButtonDown("Jump") && isGrounded)
+        {
+            jump();
+        }
+
+        applyGravity();
+
+        controller.Move(velocity * Time.deltaTime);
+
+        if (knockBackCounter > 0)
+        {
+            knockBackCounter -= Time.deltaTime;
+
+            controller.Move(knockBackMove * knockBackMultiplier * knockBackCounter * Time.deltaTime);
+        }
+    }
+
+    private void checkIfGrounded()
+    {
         // Set to true if the groundCheck object collides with something in the groundMask
         isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
 
         // Removes the jittering when jumping onto objects
         if (velocity.y <= 0 && isGrounded && characterController.stepOffset != 0.3f)
         {
-            Debug.Log("Reset stepOffset");
+            // Debug.Log("Reset stepOffset");
             characterController.stepOffset = 0.3f;
         }
 
         if (!isGrounded && characterController.stepOffset != 0f)
         {
-            Debug.Log("Set stepOffset");
+            // Debug.Log("Set stepOffset");
             characterController.stepOffset = 0f;
         }
+    }
 
-        // Keeps player from constantly accelerating while on the ground
-        if (isGrounded && (velocity.y < 0))
-        {
-            velocity.y = -2f;
-        }
-
+    private void horizontalMovement()
+    {
         float x = Input.GetAxis("Horizontal");
         float z = Input.GetAxis("Vertical");
 
         // Applies horizontal velocity to the player
         move = transform.right * x + transform.forward * z;
 
-        // Math for the jump function
-        if (Input.GetButtonDown("Jump") && isGrounded)
-        {
-            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-        }
-
         controller.Move(move * speed * Time.deltaTime);
+    }
 
-        // Applies acceleration towards the ground due to gravity
-        velocity.y += gravity * Time.deltaTime;
+    private void jump()
+    {
+        velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+    }
 
-        controller.Move(velocity * Time.deltaTime);
-        if (knockBackCounter > 0)
+
+    private void applyGravity()
+    {
+        if (isGrounded && velocity.y < 0) // Keeps player from constantly accelerating while on the ground
         {
-            knockBackCounter -= Time.deltaTime;
-
-            controller.Move(knockBackMove * knockBackMultiplier * knockBackCounter * Time.deltaTime);
+            velocity.y = -2f;
+        }
+        else
+        {
+            velocity.y += gravity * Time.deltaTime;
         }
     }
 

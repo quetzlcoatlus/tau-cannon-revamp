@@ -10,6 +10,7 @@ public class PullableController : MonoBehaviour
     private Rigidbody       rigidbod;
 
 
+    // TODO: Make pullable object prefab?
     // Start is called before the first frame update
     void Start()
     {
@@ -26,7 +27,7 @@ public class PullableController : MonoBehaviour
             transform.position = tauGun.transform.position + tauGun.transform.forward * (6f + 0.55f * transform.localScale.z);
             transform.rotation = tauGun.transform.rotation;
         }
-        // find way to turn on gravity when pulling but not stuck
+        // TODO: find way to turn on gravity when pulling but not stuck
     }
 
 
@@ -54,7 +55,7 @@ public class PullableController : MonoBehaviour
     }
 
 
-    // NEED TO make sure collisions only checked during pulling
+    // TODO: make sure collisions only checked during pulling
     void OnCollisionEnter(Collision collision){
         if ((collision.gameObject.tag == "Gun" || collision.gameObject.tag == "Player") && tauGun.GetComponent<TauGun>().heldObject == null && tauGun.GetComponent<TauGun>().isPulling == true)
         {

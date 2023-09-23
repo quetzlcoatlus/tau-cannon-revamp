@@ -1932,7 +1932,8 @@ PrefabInstance:
       propertyPath: m_Name
       value: First Person Player
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 2842254485727842956, guid: e7ef46276dbfe3749940c9f486f0ca65, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: e7ef46276dbfe3749940c9f486f0ca65, type: 3}
 --- !u!1 &790754338
 GameObject:
