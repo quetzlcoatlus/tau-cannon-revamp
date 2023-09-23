@@ -17,9 +17,9 @@ public class TauGun : MonoBehaviour
 
     public GameObject               heldObject;
     public float                    pushTimer;
-    public bool                     isPulling;
+    public bool                     isPulling; // Used in pullable controller (pain)
 
-    public Rigidbody                target;
+    private Rigidbody                target;
 
     private GameObject              player;
 
@@ -28,37 +28,49 @@ public class TauGun : MonoBehaviour
     void Start()
     {
         player          = GameObject.Find("First Person Player");
-        magnetPoint     = GameObject.Find("First Person Player").GetComponent<Transform>();
+        magnetPoint     = player.GetComponent<Transform>();
         cam             = Camera.main;
         chargeBar       = GameObject.Find("Charge Bar").GetComponent<ChargeBarController>();
     }
 
     // Update is called once per frame
+    // TODO: Changed logic so there might be some redundant code in this file
     void Update()
     {
-        // Makes sure that only one object can be held. If one
-        if (heldObject == null && Input.GetButton("Fire1"))
+        // Checks that the button isn't pressed or there is a held object
+        if (!Input.GetButton("Fire1") || heldObject != null)
         {
-            isPulling = true;
-            Pull();
-        }
-        else if (target != null)
-        {
-            target.useGravity = true;
+            if (target != null)
+            {
+                target.useGravity = true; // Reset gravity for object
+            }
             target = null;
-        }
-
-        if (!Input.GetButton("Fire1"))
-        {
             isPulling = false;
         }
+        else
+        {
+            RaycastHit hit;
 
+            // Raycast doesn't hit anything
+            if (!Physics.Raycast(cam.transform.position, cam.transform.forward, out hit, range))
+            {
+                return;
+            }
+
+            // Object can't be pulled
+            if (!hit.transform.gameObject.GetComponent<PullableController>() || !hit.transform.gameObject.CompareTag("Movable")) // Looks redundant might want to remove the first or second way we test if something is movable
+            {
+                return;
+            }
+
+            isPulling = true;
+            Pull(hit);
+        }
+
+        // Right click fills charge bar based on time held
         if (Input.GetButton("Fire2"))
         {
-            
-            pushTimer += Time.deltaTime;
-            Debug.Log(pushTimer);
-            chargeBar.changeCharge(pushTimer);
+            updateChargeLevel();
         }
 
         // This is allowed while pulling, unintentional but seems interesting
@@ -66,58 +78,61 @@ public class TauGun : MonoBehaviour
         // Knockback will be based on charge later too
         if (Input.GetMouseButtonUp(1))
         {
-            pushFactor = pushCap * pushTimer;
-            if (pushFactor > pushCap * 2f)
-            {
-                pushFactor = pushCap * 2f;
-            }
+            releaseCharge();
+        }
+    }
 
-            player.GetComponent<PlayerMovement>().knockback(cam.transform.forward.normalized * -1, pushFactor * knockbackMultiplier);
-
-            Push();
-            pushTimer = 0;
-            chargeBar.changeCharge(pushTimer);
+    private void releaseCharge()
+    {
+        pushFactor = pushCap * pushTimer;
+        if (pushFactor > pushCap * 2f)
+        {
+            pushFactor = pushCap * 2f;
         }
 
+        player.GetComponent<PlayerMovement>().knockback(cam.transform.forward.normalized * -1, pushFactor * knockbackMultiplier); // Doing player knockback in the taugun script. bit sus
 
+        Push();
+        pushTimer = 0;
+        chargeBar.changeCharge(pushTimer);
+    }
+
+    private void updateChargeLevel()
+    {
+        pushTimer += Time.deltaTime;
+        Debug.Log(pushTimer);
+        chargeBar.changeCharge(pushTimer);
     }
 
 
     // When the left mouse button is held and an object is within range it will be pulled towards the Tau Cannon
-    void Pull()
+    // TODO: make it so that the pull doesn't immediately stop an object's velocity(?)
+    private void Pull(RaycastHit hit)
     {
         //muzzleFlash.Play();
-        RaycastHit hit;
-
-        // If the raycast hits something, get the target's rigidbody and pull it towards the gun
-        if (Physics.Raycast(cam.transform.position, cam.transform.forward, out hit, range))
+ 
+        // Checks when the raycast stops hitting the target to turn its gravity back on
+        if (hit.rigidbody != target && target != null)
         {
-            if (hit.transform.gameObject.GetComponent<PullableController>() && hit.transform.gameObject.CompareTag("Movable"))
-            {
-                // Checks when the raycast stops hitting the object being pulled currently to turn gravity back on
-                if (hit.rigidbody != target && target != null)
-                {
-                    target.useGravity = true;
-                }
+            target.useGravity = true;
+        }
 
-                //DamageSystem target = hit.transform.GetComponent<DamageSystem>();
-                target = hit.rigidbody;
+        //DamageSystem target = hit.transform.GetComponent<DamageSystem>();
+        target = hit.rigidbody;
+        target.useGravity = false;
 
-                if (target != null)
-                {
-                    //target.AddForce((magnetPoint.position + magnetPoint.transform.forward * 0.5f - target.position + new Vector3(0, 0.9f, 0)).normalized * forceFactor * Time.fixedDeltaTime);
-                    //hit.collider.gameObject.GetComponent<PullableController>().gravityOff();
+        if (target != null)
+        {
+            //target.AddForce((magnetPoint.position + magnetPoint.transform.forward * 0.5f - target.position + new Vector3(0, 0.9f, 0)).normalized * forceFactor * Time.fixedDeltaTime);
+            //hit.collider.gameObject.GetComponent<PullableController>().gravityOff();
 
-                    target.velocity = (magnetPoint.position + magnetPoint.transform.forward * 0.5f - target.position + new Vector3(0, 0.9f, 0)).normalized * pullFactor * Time.fixedDeltaTime;
-                    target.useGravity = false;
-                }
-            }
+            target.velocity = (magnetPoint.position + magnetPoint.transform.forward * 0.5f - target.position + new Vector3(0, 0.9f, 0)).normalized * pullFactor * Time.fixedDeltaTime;
         }
     }
 
 
     // When there is an object held by the Tau Cannon, applies variable force based on time held and launches the object when the right mouse button is clicked
-    void Push()
+    private void Push()
     {
         if (heldObject != null)
         {
