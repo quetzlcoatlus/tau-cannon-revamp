@@ -55,7 +55,7 @@ public class PullableController : MonoBehaviour
     }
 
 
-    // NEED TO make sure collisions only checked during pulling
+    // TODO: make sure collisions only checked during pulling
     void OnCollisionEnter(Collision collision){
         if ((collision.gameObject.tag == "Gun" || collision.gameObject.tag == "Player") && tauGun.GetComponent<TauGun>().heldObject == null && tauGun.GetComponent<TauGun>().isPulling == true)
         {
