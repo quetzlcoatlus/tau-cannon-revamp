@@ -1,5 +1,9 @@
 fileFormatVersion: 2
-guid: 607b268ce61994c4294d78e1a07ddf0b
+<<<<<<< HEAD
+guid: 27e5b49b2e5ba534fbe1d81769d44ede
+=======
+guid: f83f514faca71ec48851c56fb7a809d3
+>>>>>>> Alex
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}
